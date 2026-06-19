@@ -15,8 +15,13 @@ from fastapi import FastAPI, HTTPException
 
 from config.settings import get_settings
 from schemas.cpu_schema import CPURequest, CPUResponse
+from schemas.correlation.correlation_output import CorrelationOutput
 from services.llm_service import get_llm
 from agents.cpu_agent import run_cpu_agent
+
+# Routers
+from routers.knowledge_router import router as knowledge_router
+from routers.approval_router import router as approval_router
 
 # ---------------------------------------------------------------------------
 # Logging Configuration
@@ -76,6 +81,10 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+# Include Routers
+app.include_router(knowledge_router)
+app.include_router(approval_router)
 
 
 # ---------------------------------------------------------------------------
@@ -186,6 +195,72 @@ async def cpu_analysis(request: CPURequest) -> CPUResponse:
         raise HTTPException(
             status_code=500,
             detail=f"CPU analysis failed: {exc}",
+        ) from exc
+
+
+@app.post(
+    "/correlate",
+    response_model=CorrelationOutput,
+    summary="Event Correlation Analysis",
+    description=(
+        "Runs the full multi-signal Event Correlation Engine for a specified "
+        "Kubernetes pod. Combines CPU, Memory, Disk, Network, Log, and "
+        "Kubernetes Event signals to identify the most probable incident type "
+        "and root cause."
+    ),
+    tags=["Agents"],
+)
+async def correlate_analysis(request: CPURequest) -> CorrelationOutput:
+    """
+    Execute the Event Correlation Engine.
+
+    Accepts a namespace and pod name, runs the full pipeline
+    (metric_collector → correlation → analyzer → …), and returns
+    the CorrelationOutput from the shared state.
+
+    Args:
+        request: The CPU analysis request containing namespace and pod_name.
+
+    Returns:
+        CorrelationOutput with incident_type, root_cause, confidence_score,
+        correlated_events, and correlation_summary.
+    """
+    logger.info(
+        "Received correlation request: namespace='%s', pod_name='%s'.",
+        request.namespace,
+        request.pod_name,
+    )
+
+    try:
+        from graph.cpu_graph import build_cpu_graph
+        from schemas.cpu_state import CPUState, InputState
+
+        cpu_graph = build_cpu_graph()
+        initial_state = CPUState(
+            inputs=InputState(
+                pod_name=request.pod_name,
+                namespace=request.namespace,
+            )
+        )
+
+        result_state: CPUState = cpu_graph.invoke(initial_state)
+
+        logger.info(
+            "Correlation completed: incident=%s confidence=%.2f source=%s",
+            result_state.correlation_output.incident_type.value,
+            result_state.correlation_output.confidence_score,
+            result_state.correlation_output.source.value,
+        )
+
+        return result_state.correlation_output
+
+    except Exception as exc:
+        logger.error(
+            "Correlation endpoint failed: %s", exc, exc_info=True,
+        )
+        raise HTTPException(
+            status_code=500,
+            detail=f"Correlation analysis failed: {exc}",
         ) from exc
 
 

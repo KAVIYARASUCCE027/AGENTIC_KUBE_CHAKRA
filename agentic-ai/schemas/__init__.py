@@ -45,6 +45,13 @@ from schemas.coordinator import (
     CoordinatorOutput,
 )
 
+from schemas.knowledge.chroma_schemas import (
+    ChromaIncident,
+    ChromaRunbook,
+    KnowledgeDocument,
+)
+from schemas.knowledge.knowledge_output import KnowledgeAgentOutput
+
 __all__ = [
     # Phase 1
     "CPURequest",
@@ -71,6 +78,12 @@ __all__ = [
     "ExecutionPolicy",
     "CoordinatorInput",
     "CoordinatorOutput",
+
+    # Phase 11 - Knowledge / RAG
+    "ChromaIncident",
+    "ChromaRunbook",
+    "KnowledgeDocument",
+    "KnowledgeAgentOutput",
 
     # Phase 2 — Root
     "CPUState",

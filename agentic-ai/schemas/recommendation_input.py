@@ -59,3 +59,4 @@ class RecommendationInputSchema(BaseModel):
     metrics: MetricsSnapshot
     analyzer_output: AnalyzerSummary
     root_cause_output: RootCauseSummary
+    rag_context: str = Field(default="")

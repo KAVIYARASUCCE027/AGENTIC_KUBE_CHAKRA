@@ -41,6 +41,10 @@ from schemas.root_cause_output import RootCauseOutputState
 from schemas.recommendation_output import RecommendationOutputState
 from schemas.action_plan_output import ActionPlanOutputState
 from schemas.memory_output import MemoryOutputState
+from schemas.knowledge.knowledge_output import KnowledgeAgentOutput
+from schemas.correlation.correlation_output import CorrelationOutput
+from schemas.approval.approval_output import ApprovalOutputState
+from schemas.approval.execution_output import ExecutionOutputState
 
 logger = logging.getLogger(__name__)
 
@@ -283,6 +287,14 @@ class CPUState(BaseModel):
         recommendation_output  — AI-powered SRE recommendations.
         action_plan_output     — AI-powered executable action plan.
         memory_output          — Contextual historical incident matches (Phase 9).
+        knowledge_output       — Knowledge-based retrieval context.
+        correlation_output     — Multi-signal event correlation result (Phase 12).
+        cpu_analysis           — Free-text CPU signal summary for the correlator.
+        memory_analysis        — Memory signal summary for the correlator.
+        disk_analysis          — Disk signal summary for the correlator.
+        network_analysis       — Network signal summary for the correlator.
+        log_analysis           — Application log signal summary for the correlator.
+        event_analysis         — Kubernetes Events signal summary for the correlator.
         metadata               — How is this run going?
 
     Usage:
@@ -303,6 +315,22 @@ class CPUState(BaseModel):
         default_factory=MetricState,
         description="CPU utilisation metrics from the monitoring stack.",
     )
+
+    memory_output: Optional[MemoryOutputState] = Field(
+        default=None,
+        description="Results from the memory/correlation agent.",
+    )
+    
+    approval_output: Optional[ApprovalOutputState] = Field(
+        default_factory=ApprovalOutputState,
+        description="Results from the human approval agent.",
+    )
+    
+    execution_output: Optional[ExecutionOutputState] = Field(
+        default_factory=ExecutionOutputState,
+        description="Results from the executor agent.",
+    )
+
     analyzer_output: AnalyzerOutputState = Field(
         default_factory=AnalyzerOutputState,
         description="Deterministic analysis and recommendations.",
@@ -322,6 +350,41 @@ class CPUState(BaseModel):
     memory_output: MemoryOutputState = Field(
         default_factory=MemoryOutputState,
         description="Historical incident memory for pattern correlation.",
+    )
+    knowledge_output: KnowledgeAgentOutput = Field(
+        default_factory=KnowledgeAgentOutput,
+        description="Knowledge-based retrieval context.",
+    )
+    # ---------------------------------------------------------------
+    # Phase 12 — Event Correlation Engine fields
+    # ---------------------------------------------------------------
+    correlation_output: CorrelationOutput = Field(
+        default_factory=CorrelationOutput,
+        description="Multi-signal event correlation result (Phase 12).",
+    )
+    cpu_analysis: str = Field(
+        default="",
+        description="Free-text CPU signal summary passed to the Correlation Engine.",
+    )
+    memory_analysis: str = Field(
+        default="",
+        description="Memory signal summary passed to the Correlation Engine.",
+    )
+    disk_analysis: str = Field(
+        default="",
+        description="Disk signal summary passed to the Correlation Engine.",
+    )
+    network_analysis: str = Field(
+        default="",
+        description="Network signal summary passed to the Correlation Engine.",
+    )
+    log_analysis: str = Field(
+        default="",
+        description="Application log signal summary passed to the Correlation Engine.",
+    )
+    event_analysis: str = Field(
+        default="",
+        description="Kubernetes Events signal summary passed to the Correlation Engine.",
     )
     metadata: MetadataState = Field(
         default_factory=MetadataState,

@@ -10,6 +10,7 @@ from typing import Any
 
 from graph.cpu_graph import build_cpu_graph
 from memory.conversation_memory import save_message
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -51,17 +52,29 @@ def run_cpu_agent(namespace: str, pod_name: str) -> dict[str, Any]:
 
         # Prepare initial state
         initial_state: dict[str, Any] = {
-            "namespace": namespace,
-            "pod_name": pod_name,
+            "inputs": {
+                "namespace": namespace,
+                "pod_name": pod_name,
+            }
         }
 
-        # Execute the graph
+        # Execute the graph with a thread_id for persistence
         logger.info("CPU Agent: Executing graph pipeline...")
-        result: dict[str, Any] = cpu_graph.invoke(initial_state)
+        thread_id = str(uuid.uuid4())
+        config = {"configurable": {"thread_id": thread_id}}
+        result: dict[str, Any] = cpu_graph.invoke(initial_state, config=config)
 
-        # Extract results
-        analysis: str = result.get("analysis_result", "No analysis available.")
-        recommendation: str = result.get("recommendation", "No recommendation available.")
+        # Extract results properly from state
+        analyzer_out = result.get("analyzer_output")
+        recommendation_out = result.get("recommendation_output")
+        approval_out = result.get("approval_output")
+        
+        analysis: str = getattr(analyzer_out, "analysis", "No analysis available.")
+        
+        recs = getattr(recommendation_out, "recommendations", [])
+        recommendation: str = ", ".join([r.value if hasattr(r, "value") else str(r) for r in recs]) if recs else "No recommendation available."
+        
+        approval_id = getattr(approval_out, "approval_id", None)
 
         # Combine output
         combined_output: str = (
@@ -69,6 +82,9 @@ def run_cpu_agent(namespace: str, pod_name: str) -> dict[str, Any]:
             f"---\n\n"
             f"## Recommendations\n\n{recommendation}"
         )
+        
+        if approval_id:
+            combined_output += f"\n\n---\n\n## Action Plan\n\nApproval Required. ID: `{approval_id}`\nThread ID: `{thread_id}`"
 
         # Save to conversation memory
         save_message(
@@ -82,6 +98,8 @@ def run_cpu_agent(namespace: str, pod_name: str) -> dict[str, Any]:
         return {
             "status": "success",
             "message": combined_output,
+            "approval_id": approval_id,
+            "thread_id": thread_id,
         }
 
     except Exception as exc:

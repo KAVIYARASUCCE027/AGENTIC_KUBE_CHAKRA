@@ -33,3 +33,4 @@ class ActionPlanInputSchema(BaseModel):
     analyzer_output: AnalyzerSummary
     root_cause_output: RootCauseSummary
     recommendation_output: RecommendationSummary
+    rag_context: str = Field(default="")

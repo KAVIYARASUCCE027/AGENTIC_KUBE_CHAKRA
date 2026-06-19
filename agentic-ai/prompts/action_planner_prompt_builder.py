@@ -71,6 +71,7 @@ class ActionPlannerPromptBuilder:
             root_cause_evidence=_format_list(rc.evidence),
             recommendations=_format_list([r.value for r in ro.recommendations]),
             recommendation_reasoning=_format_list(ro.reasoning),
+            rag_context=inp.rag_context if inp.rag_context else "NO RELEVANT HISTORICAL CONTEXT FOUND.",
         )
 
         logger.debug(

@@ -1,0 +1,65 @@
+[
+  {
+    "id": "R1",
+    "name": "Memory Leak",
+    "description": "High CPU combined with high memory usage and OOMKilled events strongly indicates a memory leak in the application.",
+    "signals": ["HIGH_CPU", "HIGH_MEMORY", "OOMKILLED"],
+    "incident_type": "MEMORY_LEAK",
+    "confidence": 0.95,
+    "evidence_template": "High CPU ({cpu_usage}%), high memory usage, and OOMKilled events detected."
+  },
+  {
+    "id": "R2",
+    "name": "Application Startup Failure",
+    "description": "CrashLoopBackOff combined with readiness probe failures indicates the application is failing to start correctly.",
+    "signals": ["CRASHLOOPBACKOFF", "READINESS_PROBE_FAILURE"],
+    "incident_type": "APPLICATION_STARTUP_FAILURE",
+    "confidence": 0.92,
+    "evidence_template": "CrashLoopBackOff and readiness probe failures detected — application cannot start successfully."
+  },
+  {
+    "id": "R3",
+    "name": "Storage Exhaustion",
+    "description": "Disk usage above 95% combined with pod restarts indicates storage exhaustion causing the pod to restart.",
+    "signals": ["DISK_CRITICAL", "POD_RESTART"],
+    "incident_type": "STORAGE_EXHAUSTION",
+    "confidence": 0.90,
+    "evidence_template": "Disk usage critical (>95%) and pod restart detected — storage exhaustion identified."
+  },
+  {
+    "id": "R4",
+    "name": "Network Misconfiguration",
+    "description": "Network timeouts combined with DNS failures indicate a network misconfiguration or DNS resolution issue.",
+    "signals": ["NETWORK_TIMEOUT", "DNS_FAILURE"],
+    "incident_type": "NETWORK_MISCONFIGURATION",
+    "confidence": 0.88,
+    "evidence_template": "Network timeouts and DNS failures detected — probable network misconfiguration."
+  },
+  {
+    "id": "R5",
+    "name": "Node Resource Pressure",
+    "description": "Memory pressure on the node combined with pod eviction events indicates the node is under resource pressure.",
+    "signals": ["MEMORY_PRESSURE", "EVICTED"],
+    "incident_type": "NODE_RESOURCE_PRESSURE",
+    "confidence": 0.91,
+    "evidence_template": "Memory pressure and pod eviction events detected — node resource pressure confirmed."
+  },
+  {
+    "id": "R6",
+    "name": "CPU Throttling",
+    "description": "Sustained high CPU throttling indicates the pod's CPU limit is too low for its workload.",
+    "signals": ["HIGH_CPU", "HIGH_THROTTLING"],
+    "incident_type": "CPU_THROTTLING",
+    "confidence": 0.85,
+    "evidence_template": "High CPU usage ({cpu_usage}%) with significant throttling — CPU limit too restrictive."
+  },
+  {
+    "id": "R7",
+    "name": "OOM Kill",
+    "description": "OOMKilled event with high memory usage indicates the container exceeded its memory limit.",
+    "signals": ["HIGH_MEMORY", "OOMKILLED"],
+    "incident_type": "OOM_KILLED",
+    "confidence": 0.93,
+    "evidence_template": "OOMKilled event with high memory usage — container exceeded memory limit."
+  }
+]

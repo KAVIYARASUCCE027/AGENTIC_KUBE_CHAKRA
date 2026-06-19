@@ -17,6 +17,8 @@ from enums.memory_source import MemorySource
 from repositories.incident_repository import IncidentRepository
 from repositories.memory_repository import MemoryRepository
 from utils.memory_logger import MemoryLogger
+from services.embeddings.embedding_service import EmbeddingService
+from services.vector_store.chroma_service import ChromaService
 
 logger = logging.getLogger(__name__)
 mem_logger = MemoryLogger("services.memory_service")
@@ -26,6 +28,8 @@ class MemoryService:
     def __init__(self):
         self._incident_repo = IncidentRepository()
         self._memory_repo = MemoryRepository()
+        self._embedding = EmbeddingService()
+        self._chroma = ChromaService()
 
     def save_incident(self, state: CPUState) -> str:
         """Map CPUState to IncidentRecord and persist it."""
@@ -75,6 +79,40 @@ class MemoryService:
             )
 
             incident_id = self._incident_repo.save(record)
+            
+            # --- Phase 11: Continuous Sync to ChromaDB ---
+            try:
+                # 1. Create a semantic signature of the incident
+                signature = (
+                    f"Root Cause: {rc.root_cause.value}. "
+                    f"Severity: {ao.severity.value}. "
+                    f"CPU Usage: {m.cpu_usage}%. "
+                    f"Restarts: {m.restart_count}. "
+                    f"Abnormalities: {ao.abnormality.value}."
+                )
+                
+                # 2. Extract Recommendation text
+                recommendation_text = ", ".join(ro.recommendations)
+                
+                # 3. Generate Vector
+                vector = self._embedding.generate_embedding(signature)
+                
+                if vector:
+                    # 4. Upsert to Chroma
+                    self._chroma.add_incident(
+                        incident_id=incident_id,
+                        document=recommendation_text,
+                        metadata={
+                            "incident_id": incident_id,
+                            "severity": ao.severity.value,
+                            "root_cause": rc.root_cause.value
+                        },
+                        vector=vector
+                    )
+            except Exception as chroma_e:
+                logger.warning(f"Failed to sync incident {incident_id} to ChromaDB: {chroma_e}")
+            # ----------------------------------------------
+            
             elapsed_ms = int((time.monotonic() - start) * 1000)
             mem_logger.log_save_latency(record.incident_id, elapsed_ms)
             return record.incident_id

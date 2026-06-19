@@ -15,3 +15,8 @@ def get_memory_metadata_collection() -> Collection:
     """Metadata regarding retention policies or archive pointers."""
     db = get_db()
     return db["memory_metadata"]
+
+def get_approval_requests_collection() -> Collection:
+    """Stores human approval requests for the action planner."""
+    db = get_db()
+    return db["approval_requests"]

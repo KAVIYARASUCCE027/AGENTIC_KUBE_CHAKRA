@@ -1,0 +1,37 @@
+Kubernetes Incident Correlation Request
+=======================================
+
+Pod: {pod_name}
+Namespace: {namespace}
+
+--- CPU Signal ---
+{cpu_analysis}
+
+--- Memory Signal ---
+{memory_analysis}
+
+--- Disk Signal ---
+{disk_analysis}
+
+--- Network Signal ---
+{network_analysis}
+
+--- Application Logs Signal ---
+{log_analysis}
+
+--- Kubernetes Events Signal ---
+{event_analysis}
+
+--- Historical Incident Context (from ChromaDB) ---
+{historical_context}
+
+---
+
+Based on all signals above, determine:
+1. The most probable incident type.
+2. The root cause (1-2 sentences).
+3. Your confidence score (0.0 – 1.0).
+4. The key evidence signals that support your conclusion.
+5. A correlation summary (2-3 sentences) connecting all signals.
+
+Respond with a single valid JSON object only.

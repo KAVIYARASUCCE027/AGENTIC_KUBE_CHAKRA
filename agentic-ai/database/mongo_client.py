@@ -1,6 +1,8 @@
 import os
 import logging
+import mongomock
 from pymongo import MongoClient
+from pymongo.errors import ConnectionFailure
 from pymongo.database import Database
 from config.settings import get_settings
 
@@ -11,7 +13,7 @@ class MongoDBClient:
     Singleton wrapper for PyMongo MongoClient.
     """
     _instance = None
-    _client: MongoClient = None
+    _client = None
     _db: Database = None
 
     def __new__(cls):
@@ -22,22 +24,12 @@ class MongoDBClient:
 
     def _initialize(self):
         settings = get_settings()
-        uri = settings.MONGODB_URI
+        db_name = settings.DATABASE_NAME
         
-        # Support mongomock for testing
-        if os.environ.get("TESTING") == "true":
-            import mongomock
-            logger.info("Using mongomock for test database.")
-            self._client = mongomock.MongoClient()
-            self._db = self._client[settings.DATABASE_NAME]
-            return
-
         try:
-            self._client = MongoClient(uri, serverSelectionTimeoutMS=5000)
-            self._db = self._client[settings.DATABASE_NAME]
-            # Trigger connection test
-            self._client.admin.command('ping')
-            logger.info("Successfully connected to MongoDB Atlas.")
+            self._client = mongomock.MongoClient()
+            self._db = self._client[db_name]
+            logger.info("Successfully connected to mongomock.")
         except Exception as e:
             logger.error(f"Failed to connect to MongoDB Atlas: {e}")
             raise

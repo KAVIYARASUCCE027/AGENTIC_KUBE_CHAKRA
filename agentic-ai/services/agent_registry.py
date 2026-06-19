@@ -1,14 +1,16 @@
 """
-Agent Registry — Phase 10.
+Agent Registry — Phase 10, updated Phase 12.
 """
 import logging
 from typing import Dict, Type
 from agents.base_agent import BaseAgent
 from agents.analyzer_agent import AnalyzerAgent
 from agents.root_cause_agent import RootCauseAgent
+from agents.knowledge_agent import KnowledgeAgent
 from agents.recommendation_agent import RecommendationAgent
 from agents.action_planner_agent import ActionPlannerAgent
 from agents.memory_agent import MemoryAgent
+from agents.correlation_agent import CorrelationAgent
 
 logger = logging.getLogger(__name__)
 
@@ -21,8 +23,10 @@ class AgentRegistry:
         self._register_defaults()
 
     def _register_defaults(self):
+        self.register(CorrelationAgent())
         self.register(AnalyzerAgent())
         self.register(RootCauseAgent())
+        self.register(KnowledgeAgent())
         self.register(RecommendationAgent())
         self.register(ActionPlannerAgent())
         self.register(MemoryAgent())

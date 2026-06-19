@@ -33,6 +33,9 @@ Recommendations:
 Reasoning:
 {recommendation_reasoning}
 
+=== HISTORICAL KNOWLEDGE (Phase 11 RAG Context) ===
+{rag_context}
+
 === YOUR TASK ===
 Based ONLY on the context above, construct a detailed operational runbook for engineers.
 

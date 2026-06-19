@@ -1,0 +1,11 @@
+=== USER QUESTION ===
+{question}
+
+=== RETRIEVED KNOWLEDGE ===
+{context}
+
+=== INSTRUCTIONS ===
+Analyze the retrieved knowledge and answer the user's question. 
+Ensure your `answer` field is formatted in Markdown and covers the Response Requirements outlined in your system prompt (Explanation, Causes, Resolution, Prevention, PromQL, K8s Concepts).
+
+Remember to output ONLY valid JSON without any markdown fences.
