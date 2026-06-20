@@ -25,10 +25,47 @@ from __future__ import annotations
 import logging
 import random
 import time
+import asyncio
 from functools import wraps
 from typing import Any, Callable, Sequence, Type
 
 logger = logging.getLogger(__name__)
+
+from schemas.event_message import EventMessage
+from memory.dead_letter_queue import DeadLetterQueue
+
+class EventRetryService:
+    """
+    Retry logic for event bus handlers.
+    After max_retries, pushes the failed event to the Dead Letter Queue.
+    """
+    def __init__(self, dlq: DeadLetterQueue, max_retries: int = 3, base_delay: float = 2.0, backoff_factor: float = 2.0):
+        self.dlq = dlq
+        self.max_retries = max_retries
+        self.base_delay = base_delay
+        self.backoff_factor = backoff_factor
+
+    async def execute_with_retry(self, handler: Callable, event: EventMessage) -> bool:
+        """
+        Executes a handler with exponential backoff.
+        Returns True if successful, False if sent to DLQ.
+        """
+        delay = self.base_delay
+        for attempt in range(1, self.max_retries + 2):
+            try:
+                await handler(event)
+                return True
+            except Exception as e:
+                if attempt > self.max_retries:
+                    logger.error(f"Event {event.event_id} failed after {self.max_retries} retries: {e}. Sending to DLQ.")
+                    self.dlq.add(event, str(e))
+                    return False
+                
+                logger.warning(f"Handler failed for event {event.event_id} (Attempt {attempt}/{self.max_retries}). Retrying in {delay}s...")
+                await asyncio.sleep(delay)
+                delay *= self.backoff_factor
+        return False
+
 
 # Default transient exceptions that warrant a retry
 _DEFAULT_RETRYABLE: tuple[Type[Exception], ...] = (

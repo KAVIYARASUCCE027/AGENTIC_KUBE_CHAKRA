@@ -17,7 +17,9 @@ from config.settings import get_settings
 from schemas.cpu_schema import CPURequest, CPUResponse
 from schemas.correlation.correlation_output import CorrelationOutput
 from services.llm_service import get_llm
+from services.bootstrap_agents import initialize_registry
 from agents.cpu_agent import run_cpu_agent
+from services.global_bus import event_bus
 
 # Routers
 from routers.knowledge_router import router as knowledge_router
@@ -62,10 +64,17 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("API Key Set  : %s", "Yes" if settings.GOOGLE_API_KEY else "NO — set GOOGLE_API_KEY in .env")
     logger.info("=" * 60)
 
+    # Initialize Agents
+    initialize_registry()
+
+    # Start Phase 18 Event Bus
+    await event_bus.start()
+
     yield
 
     # --- Shutdown ---
     logger.info("K8S Agentic AI Service — Shutting down gracefully.")
+    await event_bus.stop()
 
 
 # ---------------------------------------------------------------------------

@@ -32,6 +32,9 @@ from services.correlation.event_correlation_service import EventCorrelationServi
 from services.gemini.gemini_correlation_service import GeminiCorrelationService
 from services.retrieval.retriever_service import RetrieverService
 from services.retrieval.context_builder import ContextBuilder
+from services.global_bus import subscriber, publisher
+from schemas.event_message import EventMessage
+from config.event_types import EventType
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +58,17 @@ class CorrelationAgent(BaseAgent):
         self._retriever      = RetrieverService()
         self._ctx_builder    = ContextBuilder()
         logger.info("CorrelationAgent: Initialised (rule + Gemini + RAG).")
+
+        # Phase 18: Subscribe to correlated events
+        self._recent_correlated_events = []
+        subscriber.subscribe(EventType.RESOURCE_EXHAUSTION, self.handle_event)
+        subscriber.subscribe(EventType.APPLICATION_OVERLOAD, self.handle_event)
+        subscriber.subscribe(EventType.NODE_FAILURE, self.handle_event)
+
+    async def handle_event(self, event: EventMessage):
+        """Async event handler for Event Bus interactions."""
+        logger.info(f"Supervisor received correlated event: {event.event_type}")
+        self._recent_correlated_events.append(event)
 
     @property
     def name(self) -> str:

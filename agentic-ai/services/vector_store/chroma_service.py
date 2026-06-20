@@ -60,9 +60,39 @@ class ChromaService:
         self._prom_guides_col = self._client.get_or_create_collection(
             name="prometheus_guides", metadata={"hnsw:space": "cosine"}
         )
+        self._execution_audit_col = self._client.get_or_create_collection(
+            name="execution_audit_logs", metadata={"hnsw:space": "cosine"}
+        )
+        self._execution_history_col = self._client.get_or_create_collection(
+            name="execution_history", metadata={"hnsw:space": "cosine"}
+        )
+        # Phase 16
+        self._memory_history_col = self._client.get_or_create_collection(
+            name="memory_history", metadata={"hnsw:space": "cosine"}
+        )
+        self._disk_history_col = self._client.get_or_create_collection(
+            name="disk_history", metadata={"hnsw:space": "cosine"}
+        )
+        self._network_history_col = self._client.get_or_create_collection(
+            name="network_history", metadata={"hnsw:space": "cosine"}
+        )
+        self._log_history_col = self._client.get_or_create_collection(
+            name="log_history", metadata={"hnsw:space": "cosine"}
+        )
+        self._event_history_col = self._client.get_or_create_collection(
+            name="event_history", metadata={"hnsw:space": "cosine"}
+        )
+        
+        # Phase 18
+        self._agent_messages_col = self._client.get_or_create_collection(
+            name="agent_messages", metadata={"hnsw:space": "cosine"}
+        )
+        self._correlated_incidents_col = self._client.get_or_create_collection(
+            name="correlated_incidents", metadata={"hnsw:space": "cosine"}
+        )
         
         logger.info(f"ChromaService initialized. Client Type: {self._client_type}, DB Path: {self._db_path}")
-        logger.info(f"Collection counts -> Incidents: {self._incidents_col.count()}, Runbooks: {self._runbooks_col.count()}, Knowledge: {self._knowledge_col.count()}, K8s Docs: {self._k8s_docs_col.count()}, Prom Guides: {self._prom_guides_col.count()}")
+        logger.info(f"Collection counts -> Incidents: {self._incidents_col.count()}, Runbooks: {self._runbooks_col.count()}, Knowledge: {self._knowledge_col.count()}, K8s Docs: {self._k8s_docs_col.count()}, Prom Guides: {self._prom_guides_col.count()}, Audit: {self._execution_audit_col.count()}, History: {self._execution_history_col.count()}")
 
     # --- Incidents Collection ---
     
@@ -225,3 +255,63 @@ class ChromaService:
             vector_search_failures_total.labels(collection="prometheus_guides").inc()
             logger.error(f"Failed to search prometheus guides in ChromaDB: {e}")
             raise
+
+    # --- Execution Collections ---
+    
+    def add_execution_audit(self, audit_id: str, document: str, metadata: Dict[str, Any], vector: List[float]):
+        """Upserts an execution audit log into ChromaDB."""
+        try:
+            self._execution_audit_col.upsert(
+                ids=[audit_id],
+                embeddings=[vector],
+                documents=[document],
+                metadatas=[metadata]
+            )
+            logger.info(f"ChromaService: Successfully upserted audit log {audit_id}.")
+        except Exception as e:
+            logger.error(f"Failed to add audit log to ChromaDB: {e}")
+            raise
+
+    def add_execution_history(self, history_id: str, document: str, metadata: Dict[str, Any], vector: List[float]):
+        """Upserts an execution history record into ChromaDB."""
+        try:
+            self._execution_history_col.upsert(
+                ids=[history_id],
+                embeddings=[vector],
+                documents=[document],
+                metadatas=[metadata]
+            )
+            logger.info(f"ChromaService: Successfully upserted execution history {history_id}.")
+        except Exception as e:
+            logger.error(f"Failed to add execution history to ChromaDB: {e}")
+            raise
+
+    # --- Phase 16 Multi-Resource History Collections ---
+    
+    def _add_to_history(self, collection, history_id: str, document: str, metadata: Dict[str, Any], vector: List[float], name: str):
+        try:
+            collection.upsert(
+                ids=[history_id],
+                embeddings=[vector],
+                documents=[document],
+                metadatas=[metadata]
+            )
+            logger.info(f"ChromaService: Successfully upserted {name} history {history_id}.")
+        except Exception as e:
+            logger.error(f"Failed to add {name} history to ChromaDB: {e}")
+            raise
+
+    def add_memory_history(self, history_id: str, document: str, metadata: Dict[str, Any], vector: List[float]):
+        self._add_to_history(self._memory_history_col, history_id, document, metadata, vector, "memory")
+
+    def add_disk_history(self, history_id: str, document: str, metadata: Dict[str, Any], vector: List[float]):
+        self._add_to_history(self._disk_history_col, history_id, document, metadata, vector, "disk")
+
+    def add_network_history(self, history_id: str, document: str, metadata: Dict[str, Any], vector: List[float]):
+        self._add_to_history(self._network_history_col, history_id, document, metadata, vector, "network")
+
+    def add_log_history(self, history_id: str, document: str, metadata: Dict[str, Any], vector: List[float]):
+        self._add_to_history(self._log_history_col, history_id, document, metadata, vector, "log")
+
+    def add_event_history(self, history_id: str, document: str, metadata: Dict[str, Any], vector: List[float]):
+        self._add_to_history(self._event_history_col, history_id, document, metadata, vector, "event")
